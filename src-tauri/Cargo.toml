@@ -1,16 +1,11 @@
 [package]
 name = "hive-desktop"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "GEIANT Hive — desktop identity & worker"
+authors = ["GNS Foundation"]
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
-# The `_lib` suffix may seem redundant but it is necessary
-# to make the lib name unique and wouldn't conflict with the bin name.
-# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
 name = "hive_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
@@ -23,3 +18,27 @@ tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
+# Cryptography (Ed25519 signing + hashing)
+ed25519-dalek = { version = "2", features = ["rand_core", "std"] }
+rand_core = { version = "0.6", features = ["std"] }
+hex = "0.4"
+sha2 = "0.10"
+
+# System info (CPU, RAM, hostname)
+sysinfo = "0.32"
+
+# H3 geo cells
+h3o = "0.7"
+
+# HTTP client (rustls = no openssl headaches on macOS/Windows)
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# Async runtime (required by reqwest async)
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+
+# Cross-platform user dirs (e.g. ~/.config on macOS/Linux, %APPDATA% on Windows)
+dirs = "5"
+
+# Error handling
+anyhow = "1"
+thiserror = "1"

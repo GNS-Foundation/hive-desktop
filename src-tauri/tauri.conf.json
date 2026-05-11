@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "hive-desktop",
+  "productName": "GEIANT Hive",
   "version": "0.1.0",
   "identifier": "com.geiant.hive-desktop",
   "build": {
@@ -10,9 +10,12 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "hive-desktop",
-        "width": 800,
-        "height": 600
+        "title": "GEIANT Hive — Setup",
+        "width": 720,
+        "height": 560,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
       }
     ],
     "security": {

@@ -1,39 +1,100 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="stylesheet" href="styles.css" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tauri App</title>
-    <script type="module" src="/main.js" defer></script>
-  </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEIANT Hive — Setup</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main>
+        <header class="brand">
+            <span class="brand-mark">GH</span>
+            <span class="brand-name">GEIANT Hive</span>
+        </header>
 
-  <body>
-    <main class="container">
-      <h1>Welcome to Tauri</h1>
+        <section class="view active" id="view-welcome">
+            <h1>Welcome to the Hive</h1>
+            <p class="lede">
+                You're being invited to GEIANT's decentralized AI compute network.
+                Your device will be registered with a unique identity.
+            </p>
+            <p class="muted">
+                What you'll need: an invitation code from your operator (looks like
+                <code>GEIANT-XXXXXXXX</code>).
+            </p>
+            <div class="actions">
+                <button class="btn primary" id="btn-begin">Begin setup</button>
+            </div>
+        </section>
 
-      <div class="row">
-        <a href="https://tauri.app" target="_blank">
-          <img src="/assets/tauri.svg" class="logo tauri" alt="Tauri logo" />
-        </a>
-        <a
-          href="https://developer.mozilla.org/en-US/docs/Web/JavaScript"
-          target="_blank"
-        >
-          <img
-            src="/assets/javascript.svg"
-            class="logo vanilla"
-            alt="JavaScript logo"
-          />
-        </a>
-      </div>
-      <p>Click on the Tauri logo to learn more about the framework</p>
+        <section class="view" id="view-detecting">
+            <h1>Detecting your device</h1>
+            <p class="muted">Checking hardware and location…</p>
+            <div class="spinner"></div>
+        </section>
 
-      <form class="row" id="greet-form">
-        <input id="greet-input" placeholder="Enter a name..." />
-        <button type="submit">Greet</button>
-      </form>
-      <p id="greet-msg"></p>
+        <section class="view" id="view-preview">
+            <h1>Device profile</h1>
+            <div class="card">
+                <div class="row"><span class="label">Identity</span><code class="mono small" id="preview-pk">…</code></div>
+                <div class="row"><span class="label">Platform</span><span id="preview-platform">…</span></div>
+                <div class="row"><span class="label">CPU</span><span id="preview-cpu">…</span></div>
+                <div class="row"><span class="label">RAM</span><span id="preview-ram">…</span></div>
+                <div class="row"><span class="label">GPU</span><span id="preview-gpu">…</span></div>
+                <div class="row"><span class="label">Location</span><span id="preview-loc">…</span></div>
+                <div class="row"><span class="label">H3 cell</span><code class="mono small" id="preview-h3">…</code></div>
+            </div>
+            <div class="actions">
+                <button class="btn primary" id="btn-to-code">Continue</button>
+            </div>
+        </section>
+
+        <section class="view" id="view-code">
+            <h1>Enter your invitation code</h1>
+            <p class="muted">Paste the code your operator shared with you.</p>
+            <input type="text" id="invitation-code" class="code-input"
+                   placeholder="GEIANT-XXXXXXXX" autocapitalize="characters" />
+            <div class="error-msg" id="code-error"></div>
+            <div class="actions">
+                <button class="btn secondary" id="btn-back-to-preview">Back</button>
+                <button class="btn primary" id="btn-redeem">Redeem</button>
+            </div>
+        </section>
+
+        <section class="view" id="view-redeeming">
+            <h1>Joining the Hive…</h1>
+            <p class="muted">Verifying invitation and registering your device.</p>
+            <div class="spinner"></div>
+        </section>
+
+        <section class="view" id="view-success">
+            <h1>You're in.</h1>
+            <p class="lede">Your device is now part of the GEIANT Hive network.</p>
+            <div class="card">
+                <div class="row"><span class="label">Tier</span><span class="badge" id="success-tier">…</span></div>
+                <div class="row"><span class="label">Device ID</span><code class="mono small" id="success-device-id">…</code></div>
+                <div class="row"><span class="label">Public key</span><code class="mono small" id="success-pk">…</code></div>
+            </div>
+            <p class="muted">
+                Your device is registered as a potential worker. Worker mode is
+                disabled by default — enable it later in settings to start
+                contributing compute.
+            </p>
+            <div class="actions">
+                <button class="btn primary" id="btn-done">Done</button>
+            </div>
+        </section>
+
+        <section class="view" id="view-error">
+            <h1>Something went wrong</h1>
+            <div class="error-box" id="error-detail">…</div>
+            <div class="actions">
+                <button class="btn secondary" id="btn-back-from-error">Try again</button>
+            </div>
+        </section>
     </main>
-  </body>
+
+    <script type="module" src="main.js"></script>
+</body>
 </html>
