@@ -15,11 +15,17 @@ jobs:
       matrix:
         include:
           - platform: 'macos-latest'
-            args: '--target universal-apple-darwin'
+            args: '--target aarch64-apple-darwin'
+            rust-targets: 'aarch64-apple-darwin'
+          - platform: 'macos-latest'
+            args: '--target x86_64-apple-darwin'
+            rust-targets: 'x86_64-apple-darwin'
           - platform: 'ubuntu-22.04'
             args: ''
+            rust-targets: ''
           - platform: 'windows-latest'
             args: ''
+            rust-targets: ''
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -33,7 +39,7 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.rust-targets }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -74,7 +80,8 @@ jobs:
           releaseBody: |
             ## Downloads
 
-            - **macOS (Universal — Apple Silicon + Intel)** — `*_universal.dmg`
+            - **macOS (Apple Silicon — M1/M2/M3/M4)** — `*_aarch64.dmg`
+            - **macOS (Intel)** — `*_x64.dmg`
             - **Linux (Debian/Ubuntu)** — `*_amd64.deb`
             - **Linux (Universal)** — `*_amd64.AppImage`
             - **Windows** — `*_x64-setup.exe` or `*_x64_en-US.msi`
@@ -83,3 +90,30 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+      - name: Notarize and staple .dmg (macOS only)
+        if: startsWith(matrix.platform, 'macos')
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TARGET=$(echo "${{ matrix.args }}" | sed 's/--target //')
+          DMG=$(find "src-tauri/target/$TARGET/release/bundle/dmg" -name "*.dmg" | head -1)
+          if [ -z "$DMG" ]; then
+            echo "::error::No .dmg found in src-tauri/target/$TARGET/release/bundle/dmg"
+            exit 1
+          fi
+          echo "Notarizing $DMG"
+          xcrun notarytool submit "$DMG" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+          echo "Stapling..."
+          xcrun stapler staple "$DMG"
+          xcrun stapler validate "$DMG"
+          echo "Re-uploading stapled .dmg to release..."
+          gh release upload "${{ github.ref_name }}" "$DMG" --clobber
+          echo "✓ DMG notarized, stapled, and uploaded"
