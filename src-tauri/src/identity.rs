@@ -109,3 +109,40 @@ pub fn get_or_create_identity() -> Result<Identity> {
     save_identity(&new_id)?;
     Ok(new_id)
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Registration {
+    pub device_id: String,
+    pub device_pk: String,
+    pub tier: String,
+    pub registered_at_ms: u64,
+}
+
+pub fn registration_path() -> Result<PathBuf> {
+    let base = dirs::config_dir()
+        .ok_or_else(|| anyhow!("could not determine user config directory"))?;
+    Ok(base.join(APP_DIR_NAME).join("registration.json"))
+}
+
+pub fn save_registration(reg: &Registration) -> Result<()> {
+    let path = registration_path()?;
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let json = serde_json::to_string_pretty(reg)?;
+    fs::write(path, json)?;
+    Ok(())
+}
+
+pub fn load_registration() -> Result<Option<Registration>> {
+    let path = registration_path()?;
+    if !path.exists() {
+        return Ok(None);
+    }
+    let contents = fs::read_to_string(&path)?;
+    // Malformed JSON → treat as "no registration" so user falls back to wizard
+    match serde_json::from_str::<Registration>(&contents) {
+        Ok(reg) => Ok(Some(reg)),
+        Err(_) => Ok(None),
+    }
+}

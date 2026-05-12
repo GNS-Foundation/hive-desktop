@@ -12,6 +12,7 @@ pub fn run() {
             commands::onboarding_preview,
             commands::redeem_invitation,
             commands::close_setup_window,
+            commands::get_existing_registration,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

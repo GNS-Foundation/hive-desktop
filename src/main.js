@@ -78,6 +78,22 @@ function showError(msg) {
     showView('error');
 }
 
+async function checkExistingRegistration() {
+    try {
+        const reg = await invoke('get_existing_registration');
+        if (reg) {
+            document.getElementById('success-tier').textContent = reg.tier || '—';
+            document.getElementById('success-device-id').textContent = reg.device_id || '—';
+            document.getElementById('success-pk').textContent = shortPk(reg.device_pk);
+            showView('success');
+            return true;
+        }
+    } catch (e) {
+        console.warn('checkExistingRegistration:', e);
+    }
+    return false;
+}
+
 document.getElementById('btn-begin').addEventListener('click', runOnboardingPreview);
 document.getElementById('btn-to-code').addEventListener('click', () => showView('code'));
 document.getElementById('btn-back-to-preview').addEventListener('click', () => showView('preview'));
@@ -86,3 +102,6 @@ document.getElementById('btn-done').addEventListener('click', () => invoke('clos
 document.getElementById('btn-back-from-error').addEventListener('click', () => {
     showView(previewData ? 'code' : 'welcome');
 });
+
+// On launch: skip wizard if already registered
+checkExistingRegistration();
