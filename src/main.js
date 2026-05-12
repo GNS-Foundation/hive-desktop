@@ -82,7 +82,7 @@ document.getElementById('btn-begin').addEventListener('click', runOnboardingPrev
 document.getElementById('btn-to-code').addEventListener('click', () => showView('code'));
 document.getElementById('btn-back-to-preview').addEventListener('click', () => showView('preview'));
 document.getElementById('btn-redeem').addEventListener('click', redeemCode);
-document.getElementById('btn-done').addEventListener('click', () => window.__TAURI__.window.getCurrentWindow().close());
+document.getElementById('btn-done').addEventListener('click', () => invoke('close_setup_window'));
 document.getElementById('btn-back-from-error').addEventListener('click', () => {
     showView(previewData ? 'code' : 'welcome');
 });

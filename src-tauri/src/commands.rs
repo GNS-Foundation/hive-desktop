@@ -34,3 +34,8 @@ pub async fn redeem_invitation(invitation_code: String) -> Result<api::RegisterR
         .await
         .map_err(|e| format!("register: {:?}", e))
 }
+
+#[tauri::command]
+pub fn close_setup_window(window: tauri::WebviewWindow) -> Result<(), String> {
+    window.close().map_err(|e| e.to_string())
+}

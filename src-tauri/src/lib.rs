@@ -11,6 +11,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::onboarding_preview,
             commands::redeem_invitation,
+            commands::close_setup_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
