@@ -504,3 +504,28 @@ code, .mono {
     justify-content: center;
 }
 
+/* === v0.4.1 compose === */
+
+.compose-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.92);
+    border-radius: 8px;
+    padding: 0.75rem 0.875rem;
+    font: inherit;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 220px;
+    outline: none;
+    transition: border-color 0.12s ease, background 0.12s ease;
+    margin-top: 0.5rem;
+}
+
+.compose-textarea:focus {
+    border-color: rgba(56, 158, 217, 0.5);
+    background: rgba(255, 255, 255, 0.06);
+}
+

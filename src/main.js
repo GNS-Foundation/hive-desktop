@@ -104,6 +104,29 @@ async function handleInviteFriend() {
     await issueCode();
 }
 
+function generateInviteMessage(code, url, inviterName) {
+    const sig = inviterName ? `\u2014 ${inviterName}` : '';
+    const lines = [
+        'Hi!',
+        '',
+        "I'd like to invite you to GEIANT Hive \u2014 a decentralized AI compute network.",
+        '',
+        'Today the swarm runs TinyLlama 1.1B on a handful of devices in alpha. As more join, capacity grows: 7B \u2192 13B \u2192 and eventually Llama 70B class, all served by real hardware in a sovereign swarm. No cloud servers; every response is cryptographically signed.',
+        '',
+        'Your invite (expires in 7 days):',
+        url,
+        '',
+        "The link has the desktop app download \u2014 install, paste the code, you're in.",
+        '',
+        'One note on how the network works: Hive routes inference by H3 geographic proximity \u2014 closer workers serve faster. When your turn comes to invite others, picking nearby people builds the fastest local swarm.',
+        '',
+        'Learn more: https://hive.geiant.com',
+        '',
+    ];
+    if (sig) lines.push(sig);
+    return lines.join('\n');
+}
+
 async function issueCode() {
     const btn = document.getElementById('btn-invite-friend');
     if (btn) {
@@ -119,6 +142,11 @@ async function issueCode() {
             const urlEl = document.getElementById('invite-url-text');
             urlEl.textContent = url;
             urlEl.dataset.url = url;
+            // v0.4.1: populate the pre-filled invitation message
+            const composeEl = document.getElementById('compose-message-text');
+            if (composeEl) {
+                composeEl.value = generateInviteMessage(code, url, currentDisplayName);
+            }
             document.getElementById('invite-result').style.display = 'block';
             await fetchQuota();
         } else {
@@ -761,3 +789,10 @@ function handleKebabAction(action) {
         if (e.key === 'Escape') toggleKebab(false);
     });
 })();
+// v0.4.1: Copy invitation message
+const btnComposeCopy = document.getElementById('btn-compose-copy');
+if (btnComposeCopy) btnComposeCopy.addEventListener('click', (e) => {
+    const ta = document.getElementById('compose-message-text');
+    const text = ta ? ta.value : '';
+    copyToClipboard(text, e.target);
+});
