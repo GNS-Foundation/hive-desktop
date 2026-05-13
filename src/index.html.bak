@@ -75,7 +75,6 @@
                 <div class="row"><span class="label">Tier</span><span class="badge" id="success-tier">…</span></div>
                 <div class="row"><span class="label">Device ID</span><code class="mono small" id="success-device-id">…</code></div>
                 <div class="row"><span class="label">Public key</span><code class="mono small" id="success-pk">…</code></div>
-                <div class="row"><span class="label">Network</span><span class="mono small" id="success-network">checking…</span></div>
             </div>
             <p class="muted">
                 You can close this window — your device stays in the network.
@@ -83,8 +82,7 @@
                 disabled by default.
             </p>
             <div class="actions">
-                <button class="btn secondary" id="btn-done">Done</button>
-                <button class="btn primary" id="btn-open-dashboard">Open Dashboard</button>
+                <button class="btn primary" id="btn-done">Done</button>
             </div>
         </section>
 
