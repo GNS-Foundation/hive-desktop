@@ -9,7 +9,7 @@
 <body>
     <main>
         <header class="brand">
-            <span class="brand-mark">GH</span>
+            <span class="brand-mark">🐝</span>
             <span class="brand-name">GEIANT Hive</span>
         </header>
 
@@ -111,7 +111,7 @@
                 disabled by default.
             </p>
             <div class="actions">
-                <button class="btn secondary" id="btn-done">Done</button>
+                <button class="btn secondary" id="btn-done">Back to chat</button>
                 <button class="btn primary" id="btn-open-dashboard">Open Dashboard</button>
             </div>
         </section>
@@ -123,7 +123,7 @@
                 First name + last name is fine — whatever feels natural.
             </p>
             <input type="text" id="display-name-input" class="code-input"
-                   placeholder="e.g. Heather Meeker" maxlength="60" />
+                   placeholder="e.g. John Smith" maxlength="60" />
             <div class="error-msg" id="name-error"></div>
             <div class="actions">
                 <button class="btn secondary" id="btn-name-cancel">Cancel</button>
@@ -136,6 +136,46 @@
             <div class="error-box" id="error-detail">…</div>
             <div class="actions">
                 <button class="btn secondary" id="btn-back-from-error">Try again</button>
+            </div>
+        </section>
+
+        <section class="view" id="view-chat">
+            <div class="chat-header-bar">
+                <div class="chat-brand">
+                    <span class="brand-mark">🐝</span>
+                    <span class="brand-name">GEIANT Hive</span>
+                    <span class="alpha-tag">alpha</span>
+                </div>
+                <div class="chat-stats" id="chat-stats">
+                    <span id="chat-stats-bees">…</span>
+                    <span class="stats-dot">·</span>
+                    <span id="chat-stats-invites">…</span>
+                </div>
+                <button class="kebab-btn" id="btn-kebab" aria-label="Menu" aria-haspopup="true" aria-expanded="false">⋮</button>
+                <div class="kebab-menu hidden" id="kebab-menu" role="menu">
+                    <button class="kebab-item" data-kebab="dashboard" role="menuitem">Open Dashboard</button>
+                    <button class="kebab-item" data-kebab="invite" role="menuitem">Invite a friend</button>
+                    <button class="kebab-item" data-kebab="name" role="menuitem">Change display name</button>
+                    <button class="kebab-item" data-kebab="clear" role="menuitem">Clear conversation</button>
+                    <div class="kebab-divider"></div>
+                    <button class="kebab-item" data-kebab="about" role="menuitem">About v0.4.0</button>
+                    <button class="kebab-item" data-kebab="close" role="menuitem">Close window</button>
+                </div>
+            </div>
+
+            <div class="chat-body">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="chat-welcome" id="chat-welcome">
+                        <p class="welcome-line" id="chat-welcome-name">Welcome.</p>
+                        <p class="muted" id="chat-welcome-stats">Connecting to the swarm…</p>
+                        <p class="muted small">Type below to chat. <code class="mono small">/help</code> for commands.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-row">
+                <textarea id="chat-input" placeholder="Type a message…" rows="1" autocomplete="off"></textarea>
+                <button class="btn primary" id="btn-send">Send</button>
             </div>
         </section>
     </main>

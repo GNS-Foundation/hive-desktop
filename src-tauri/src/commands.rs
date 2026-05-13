@@ -88,3 +88,12 @@ pub async fn issue_invitation() -> Result<api::IssueInvitationResponse, String> 
     let id = identity::get_or_create_identity().map_err(|e| format!("identity: {:?}", e))?;
     api::issue_invitation(&id).await.map_err(|e| format!("issue_invitation: {:?}", e))
 }
+
+// === v0.4.0 chat completion command ===
+
+#[tauri::command]
+pub async fn chat_completion(messages: Vec<api::ChatMessage>) -> Result<api::ChatCompletionResponse, String> {
+    let id = identity::get_or_create_identity().map_err(|e| format!("identity: {:?}", e))?;
+    api::chat_completion(&id, messages, None).await.map_err(|e| format!("chat_completion: {:?}", e))
+}
+

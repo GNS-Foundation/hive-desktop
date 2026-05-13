@@ -17,6 +17,7 @@ pub fn run() {
             commands::get_quota,
             commands::set_display_name,
             commands::issue_invitation,
+            commands::chat_completion,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

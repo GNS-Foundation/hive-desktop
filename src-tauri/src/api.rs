@@ -294,3 +294,92 @@ pub async fn issue_invitation(identity: &Identity) -> Result<IssueInvitationResp
     }
     Ok(parsed)
 }
+
+// === v0.4.0 chat completion ===
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatMessage {
+    pub role: String,
+    pub content: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ChatChoice {
+    pub message: ChatMessage,
+    #[serde(default)]
+    pub finish_reason: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ChatUsage {
+    #[serde(default)]
+    pub prompt_tokens: Option<u32>,
+    #[serde(default)]
+    pub completion_tokens: Option<u32>,
+    #[serde(default)]
+    pub total_tokens: Option<u32>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct HiveExtension {
+    pub job_id: String,
+    #[serde(default)]
+    pub tokens_per_second: Option<f64>,
+    pub h3_cell: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ChatCompletionResponse {
+    pub id: String,
+    pub model: String,
+    pub choices: Vec<ChatChoice>,
+    #[serde(default)]
+    pub usage: Option<ChatUsage>,
+    #[serde(default)]
+    pub hive: Option<HiveExtension>,
+}
+
+pub async fn chat_completion(
+    identity: &Identity,
+    messages: Vec<ChatMessage>,
+    model: Option<String>,
+) -> Result<ChatCompletionResponse> {
+    let model = model.unwrap_or_else(|| "tinyllama".to_string());
+
+    let body_obj = serde_json::json!({
+        "model": model,
+        "messages": messages,
+        "max_tokens": 200,
+        "temperature": 0.7,
+        "stream": false,
+    });
+    let body_bytes = serde_json::to_vec(&body_obj)?;
+    let body_hash = sha256_hex(&body_bytes);
+    let timestamp = now_unix_ms()?;
+    let canonical = format!("gns-chat-v1:{}:{}", timestamp, body_hash);
+    let signature = identity.sign(&canonical)?;
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(120))
+        .build()?;
+    let url = format!("{}/hive/v1/chat/completions", BACKEND_URL);
+    let resp = client.post(&url)
+        .header("Content-Type", "application/json")
+        .header("X-GNS-PublicKey", &identity.pk)
+        .header("X-GNS-Signature", &signature)
+        .header("X-GNS-Timestamp", timestamp.to_string())
+        .body(body_bytes)
+        .send()
+        .await
+        .context("POST /hive/v1/chat/completions failed")?;
+
+    let status = resp.status();
+    let text = resp.text().await.context("response body read failed")?;
+    let parsed: ChatCompletionResponse = serde_json::from_str(&text)
+        .with_context(|| {
+            let preview: String = text.chars().take(300).collect();
+            format!("non-JSON response (status {}): {}", status, preview)
+        })?;
+    Ok(parsed)
+}
+
