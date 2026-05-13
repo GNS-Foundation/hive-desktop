@@ -70,3 +70,21 @@ pub fn open_dashboard(app: tauri::AppHandle, device_id: String) -> Result<(), St
         .open_url(url, None::<&str>)
         .map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub async fn get_quota() -> Result<api::QuotaInfo, String> {
+    let id = identity::get_or_create_identity().map_err(|e| format!("identity: {:?}", e))?;
+    api::get_quota(&id).await.map_err(|e| format!("get_quota: {:?}", e))
+}
+
+#[tauri::command]
+pub async fn set_display_name(name: String) -> Result<api::DisplayNameResponse, String> {
+    let id = identity::get_or_create_identity().map_err(|e| format!("identity: {:?}", e))?;
+    api::set_display_name(&id, &name).await.map_err(|e| format!("set_display_name: {:?}", e))
+}
+
+#[tauri::command]
+pub async fn issue_invitation() -> Result<api::IssueInvitationResponse, String> {
+    let id = identity::get_or_create_identity().map_err(|e| format!("identity: {:?}", e))?;
+    api::issue_invitation(&id).await.map_err(|e| format!("issue_invitation: {:?}", e))
+}

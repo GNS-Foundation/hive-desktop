@@ -109,3 +109,188 @@ pub async fn register_worker(
 
     Ok(parsed)
 }
+
+// ===========================================================================
+// v0.3 viral chain: signed requests to /hive/invitations/*
+//
+// Signing contract matches the backend's signedRequest middleware:
+//   canonical = "<domain>:<timestamp>:<sha256(rawBody)>"
+//   headers: X-GNS-PublicKey, X-GNS-Signature, X-GNS-Timestamp
+// ===========================================================================
+
+use sha2::{Sha256, Digest};
+use rand_core::{OsRng, RngCore};
+
+const INVITE_BASE_URL: &str = "https://hive.geiant.com/invite";
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct QuotaInfo {
+    #[serde(default)]
+    pub success: bool,
+    #[serde(default)]
+    pub quota_total: Option<i32>,
+    #[serde(default)]
+    pub quota_used: Option<i32>,
+    #[serde(default)]
+    pub remaining: Option<i32>,
+    #[serde(default)]
+    pub display_name: Option<String>,
+    #[serde(default)]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct DisplayNameResponse {
+    #[serde(default)]
+    pub success: bool,
+    #[serde(default)]
+    pub display_name: Option<String>,
+    #[serde(default)]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct InvitationData {
+    pub code: String,
+    #[serde(default)]
+    pub expires_at: Option<String>,
+    #[serde(default)]
+    pub inviter_pk: Option<String>,
+    #[serde(default)]
+    pub created_at: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct IssueInvitationResponse {
+    #[serde(default)]
+    pub success: bool,
+    #[serde(default)]
+    pub invitation: Option<InvitationData>,
+    #[serde(default)]
+    pub invite_url: Option<String>,
+    #[serde(default)]
+    pub error: Option<String>,
+    #[serde(default)]
+    pub detail: Option<serde_json::Value>,
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(bytes);
+    hex::encode(hasher.finalize())
+}
+
+fn now_unix_ms() -> Result<u64> {
+    Ok(SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis() as u64)
+}
+
+pub async fn get_quota(identity: &Identity) -> Result<QuotaInfo> {
+    let timestamp = now_unix_ms()?;
+    let body_hash = sha256_hex(&[]);
+    let canonical = format!("gns-quota-get-v1:{}:{}", timestamp, body_hash);
+    let signature = identity.sign(&canonical)?;
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()?;
+    let url = format!("{}/hive/invitations/quota", BACKEND_URL);
+    let resp = client.get(&url)
+        .header("X-GNS-PublicKey", &identity.pk)
+        .header("X-GNS-Signature", &signature)
+        .header("X-GNS-Timestamp", timestamp.to_string())
+        .send()
+        .await
+        .context("GET /hive/invitations/quota failed")?;
+    let status = resp.status();
+    let text = resp.text().await.context("response body read failed")?;
+    let parsed: QuotaInfo = serde_json::from_str(&text)
+        .with_context(|| format!("non-JSON response (status {}): {}", status, text))?;
+    Ok(parsed)
+}
+
+pub async fn set_display_name(identity: &Identity, name: &str) -> Result<DisplayNameResponse> {
+    let timestamp = now_unix_ms()?;
+    let body_obj = serde_json::json!({ "display_name": name });
+    let body_bytes = serde_json::to_vec(&body_obj)?;
+    let body_hash = sha256_hex(&body_bytes);
+    let canonical = format!("gns-quota-set-name-v1:{}:{}", timestamp, body_hash);
+    let signature = identity.sign(&canonical)?;
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()?;
+    let url = format!("{}/hive/invitations/display-name", BACKEND_URL);
+    let resp = client.patch(&url)
+        .header("Content-Type", "application/json")
+        .header("X-GNS-PublicKey", &identity.pk)
+        .header("X-GNS-Signature", &signature)
+        .header("X-GNS-Timestamp", timestamp.to_string())
+        .body(body_bytes)
+        .send()
+        .await
+        .context("PATCH /hive/invitations/display-name failed")?;
+    let status = resp.status();
+    let text = resp.text().await.context("response body read failed")?;
+    let parsed: DisplayNameResponse = serde_json::from_str(&text)
+        .with_context(|| format!("non-JSON response (status {}): {}", status, text))?;
+    Ok(parsed)
+}
+
+fn generate_invitation_code() -> String {
+    // Skip easily-confused chars: 0/O, 1/I/L
+    let alphabet = b"ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    let mut buf = [0u8; 8];
+    OsRng.fill_bytes(&mut buf);
+    let suffix: String = buf.iter()
+        .map(|&b| alphabet[(b as usize) % alphabet.len()] as char)
+        .collect();
+    format!("GEIANT-{}", suffix)
+}
+
+pub async fn issue_invitation(identity: &Identity) -> Result<IssueInvitationResponse> {
+    // Generate code
+    let code = generate_invitation_code();
+
+    // Inner signature: gns-invitation-v1:<code>:<inviter_pk>
+    let inviter_canonical = format!("gns-invitation-v1:{}:{}", code, identity.pk);
+    let inviter_signature = identity.sign(&inviter_canonical)?;
+
+    // Body
+    let body_obj = serde_json::json!({
+        "code": code.clone(),
+        "inviter_signature": inviter_signature,
+    });
+    let body_bytes = serde_json::to_vec(&body_obj)?;
+
+    // Outer HTTP signature: gns-invitation-create-v1:<ts>:<bodyHash>
+    let timestamp = now_unix_ms()?;
+    let body_hash = sha256_hex(&body_bytes);
+    let request_canonical = format!("gns-invitation-create-v1:{}:{}", timestamp, body_hash);
+    let request_signature = identity.sign(&request_canonical)?;
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()?;
+    let url = format!("{}/hive/invitations", BACKEND_URL);
+    let resp = client.post(&url)
+        .header("Content-Type", "application/json")
+        .header("X-GNS-PublicKey", &identity.pk)
+        .header("X-GNS-Signature", &request_signature)
+        .header("X-GNS-Timestamp", timestamp.to_string())
+        .body(body_bytes)
+        .send()
+        .await
+        .context("POST /hive/invitations failed")?;
+    let status = resp.status();
+    let text = resp.text().await.context("response body read failed")?;
+    let mut parsed: IssueInvitationResponse = serde_json::from_str(&text)
+        .with_context(|| format!("non-JSON response (status {}): {}", status, text))?;
+
+    // Synthesize invite_url if backend didn't (it doesn't today)
+    if parsed.invite_url.is_none() {
+        if let Some(inv) = &parsed.invitation {
+            parsed.invite_url = Some(format!("{}/{}", INVITE_BASE_URL, inv.code));
+        }
+    }
+    Ok(parsed)
+}

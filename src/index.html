@@ -77,6 +77,34 @@
                 <div class="row"><span class="label">Public key</span><code class="mono small" id="success-pk">…</code></div>
                 <div class="row"><span class="label">Network</span><span class="mono small" id="success-network">checking…</span></div>
             </div>
+
+            <div class="card" id="invite-card" style="margin-top:1.25rem;">
+                <div class="row">
+                    <span class="label">Invite friends</span>
+                    <span class="mono small" id="invite-quota-text">checking…</span>
+                </div>
+                <button class="btn primary" id="btn-invite-friend" style="width:100%; margin-top:0.75rem;">
+                    Generate invitation code
+                </button>
+                <div id="invite-result" style="display:none; margin-top:0.875rem;">
+                    <div class="row" style="border-top:1px solid rgba(255,255,255,0.08); padding-top:0.625rem; margin-top:0.5rem;">
+                        <span class="label">Code</span>
+                        <code class="mono" id="invite-code-text" style="font-size:0.95rem;">…</code>
+                    </div>
+                    <div class="row">
+                        <span class="label">URL</span>
+                        <code class="mono small" id="invite-url-text" style="word-break:break-all; max-width:240px; text-align:right;">…</code>
+                    </div>
+                    <div class="actions" style="margin-top:0.625rem;">
+                        <button class="btn secondary" id="btn-copy-code">Copy code</button>
+                        <button class="btn secondary" id="btn-copy-url">Copy URL</button>
+                    </div>
+                    <p class="muted" style="font-size:0.8rem; margin-top:0.625rem; text-align:center;">
+                        Send the URL to your friend. Expires in 7 days.
+                    </p>
+                </div>
+            </div>
+
             <p class="muted">
                 You can close this window — your device stays in the network.
                 Re-open the app any time to check status. Worker mode is
@@ -85,6 +113,21 @@
             <div class="actions">
                 <button class="btn secondary" id="btn-done">Done</button>
                 <button class="btn primary" id="btn-open-dashboard">Open Dashboard</button>
+            </div>
+        </section>
+
+        <section class="view" id="view-name-prompt">
+            <h1>Set your name</h1>
+            <p class="lede">
+                When you invite friends, they'll see your name on the invitation.
+                First name + last name is fine — whatever feels natural.
+            </p>
+            <input type="text" id="display-name-input" class="code-input"
+                   placeholder="e.g. Heather Meeker" maxlength="60" />
+            <div class="error-msg" id="name-error"></div>
+            <div class="actions">
+                <button class="btn secondary" id="btn-name-cancel">Cancel</button>
+                <button class="btn primary" id="btn-name-save">Save and continue</button>
             </div>
         </section>
 

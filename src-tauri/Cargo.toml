@@ -1,6 +1,6 @@
 [package]
 name = "hive-desktop"
-version = "0.2.0"
+version = "0.3.0"
 description = "GEIANT Hive — desktop identity & worker"
 authors = ["GNS Foundation"]
 edition = "2021"
