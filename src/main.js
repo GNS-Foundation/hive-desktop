@@ -723,7 +723,7 @@ function handleKebabAction(action) {
             appendMessageEl(
                 'assistant',
                 [
-                    '**GEIANT Hive Desktop \u00b7 v0.4.0**',
+                    '**GEIANT Hive Desktop \u00b7 v0.4.2**',
                     '',
                     'You are connected to a decentralized AI compute network.',
                     'Your device is part of the swarm. No cloud servers, no data collection.',

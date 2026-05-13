@@ -529,3 +529,29 @@ code, .mono {
     background: rgba(255, 255, 255, 0.06);
 }
 
+/* === v0.4.2 kebab visibility === */
+
+/* Make the kebab button obviously clickable — bigger dots, default tint,
+   stronger hover affordance. */
+.kebab-btn {
+    font-size: 1.85rem !important;
+    line-height: 0.8 !important;
+    width: 40px !important;
+    height: 40px !important;
+    color: rgba(255, 255, 255, 0.92) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.kebab-btn:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: rgba(255, 255, 255, 1) !important;
+    border-color: rgba(255, 255, 255, 0.20) !important;
+}
+
+.kebab-btn:active {
+    transform: scale(0.96);
+}
+
