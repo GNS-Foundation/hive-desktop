@@ -383,3 +383,63 @@ pub async fn chat_completion(
     Ok(parsed)
 }
 
+// === v0.4.3 heartbeat ===
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HeartbeatPayload {
+    pub status: String,
+}
+
+impl HeartbeatPayload {
+    pub fn online() -> Self {
+        Self { status: "online".to_string() }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct HeartbeatResponse {
+    #[serde(default)]
+    pub success: bool,
+    #[serde(default)]
+    pub last_heartbeat: Option<String>,
+    #[serde(default)]
+    pub error: Option<String>,
+    #[serde(default)]
+    pub detail: Option<String>,
+}
+
+pub async fn send_heartbeat(identity: &Identity, payload: &HeartbeatPayload) -> Result<HeartbeatResponse> {
+    let body_bytes = serde_json::to_vec(payload)?;
+    let body_hash = sha256_hex(&body_bytes);
+    let timestamp = now_unix_ms()?;
+    let canonical = format!("gns-worker-heartbeat-v1:{}:{}", timestamp, body_hash);
+    let signature = identity.sign(&canonical)?;
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?;
+    let url = format!("{}/hive/workers/heartbeat", BACKEND_URL);
+    let resp = client.post(&url)
+        .header("Content-Type", "application/json")
+        .header("X-GNS-PublicKey", &identity.pk)
+        .header("X-GNS-Signature", &signature)
+        .header("X-GNS-Timestamp", timestamp.to_string())
+        .body(body_bytes)
+        .send()
+        .await
+        .context("POST /hive/workers/heartbeat failed")?;
+
+    let status = resp.status();
+    let text = resp.text().await.context("response body read failed")?;
+    let parsed: HeartbeatResponse = serde_json::from_str(&text)
+        .with_context(|| format!("non-JSON response (status {}): {}", status, text))?;
+
+    if status == reqwest::StatusCode::NOT_FOUND {
+        anyhow::bail!("device_not_registered");
+    }
+    if !status.is_success() {
+        anyhow::bail!("heartbeat failed (status {}): {:?}", status, parsed.error);
+    }
+    Ok(parsed)
+}
+
