@@ -159,6 +159,14 @@
                     <span class="stats-dot">·</span>
                     <span id="chat-stats-invites">…</span>
                 </div>
+                <div class="chat-model-selector">
+                    <select id="model-select" class="model-select" aria-label="Choose model">
+                        <option value="lfm2.5-1.2b-instruct">LFM2.5 Instruct</option>
+                        <option value="lfm2.5-1.2b-thinking">LFM2.5 Thinking</option>
+                        <option value="phi-3-mini">Phi-3 Mini</option>
+                        <option value="tinyllama">TinyLlama</option>
+                    </select>
+                </div>
                 <button class="kebab-btn" id="btn-kebab" aria-label="Menu" aria-haspopup="true" aria-expanded="false">⋮</button>
                 <div class="kebab-menu hidden" id="kebab-menu" role="menu">
                     <button class="kebab-item" data-kebab="dashboard" role="menuitem">Open Dashboard</button>
@@ -166,7 +174,8 @@
                     <button class="kebab-item" data-kebab="name" role="menuitem">Change display name</button>
                     <button class="kebab-item" data-kebab="clear" role="menuitem">Clear conversation</button>
                     <div class="kebab-divider"></div>
-                    <button class="kebab-item" data-kebab="about" role="menuitem">About v0.4.0</button>
+                    <button class="kebab-item" data-kebab="updates" role="menuitem">Check for updates →</button>
+                    <button class="kebab-item" data-kebab="about" role="menuitem">About v0.4.4</button>
                     <button class="kebab-item" data-kebab="close" role="menuitem">Close window</button>
                 </div>
             </div>

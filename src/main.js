@@ -1,5 +1,41 @@
 const { invoke } = window.__TAURI__.core;
 
+// ─── Model catalog ──────────────────────────────────────────────
+const MODEL_CATALOG = [
+    { id: 'lfm2.5-1.2b-instruct', label: 'LFM2.5 Instruct' },
+    { id: 'lfm2.5-1.2b-thinking', label: 'LFM2.5 Thinking' },
+    { id: 'phi-3-mini',           label: 'Phi-3 Mini' },
+    { id: 'tinyllama',            label: 'TinyLlama' },
+];
+const DEFAULT_MODEL = 'lfm2.5-1.2b-instruct';
+const MODEL_STORAGE_KEY = 'hive.selectedModel';
+
+function getSelectedModel() {
+    try {
+        const stored = localStorage.getItem(MODEL_STORAGE_KEY);
+        if (stored && MODEL_CATALOG.some(m => m.id === stored)) return stored;
+    } catch (_) {}
+    return DEFAULT_MODEL;
+}
+
+function setSelectedModel(modelId) {
+    try { localStorage.setItem(MODEL_STORAGE_KEY, modelId); } catch (_) {}
+}
+
+function initModelSelector() {
+    const sel = document.getElementById('model-select');
+    if (!sel) return;
+    sel.value = getSelectedModel();
+    sel.addEventListener('change', () => setSelectedModel(sel.value));
+}
+
+// Auto-init when DOM is ready (works whether script loads before or after DOMContentLoaded)
+if (document.readyState !== 'loading') {
+    initModelSelector();
+} else {
+    document.addEventListener('DOMContentLoaded', initModelSelector);
+}
+
 const BACKEND = 'https://gns-browser-production.up.railway.app';
 const INVITE_BASE = 'https://hive.geiant.com/invite';
 
@@ -617,11 +653,11 @@ async function sendChatMessage() {
 
     let assistantText = '';
     let hiveMeta = null;
-    let modelUsed = 'tinyllama';
+    let modelUsed = getSelectedModel();
     let errorMsg = null;
 
     try {
-        const resp = await invoke('chat_completion', { messages });
+        const resp = await invoke('chat_completion', { messages, model: modelUsed });
         if (resp && resp.choices && resp.choices.length > 0) {
             assistantText = cleanResponse(resp.choices[0].message?.content || '');
             hiveMeta = resp.hive || null;
@@ -723,7 +759,7 @@ function handleKebabAction(action) {
             appendMessageEl(
                 'assistant',
                 [
-                    '**GEIANT Hive Desktop \u00b7 v0.4.2**',
+                    '**GEIANT Hive Desktop \u00b7 v0.4.4**',
                     '',
                     'You are connected to a decentralized AI compute network.',
                     'Your device is part of the swarm. No cloud servers, no data collection.',
@@ -733,6 +769,9 @@ function handleKebabAction(action) {
                 ].join('\n'),
                 '\ud83d\udc1d about',
             );
+            break;
+        case 'updates':
+            invoke('open_download_page').catch(e => console.error('open_download_page:', e));
             break;
         case 'close':
             invoke('close_setup_window');

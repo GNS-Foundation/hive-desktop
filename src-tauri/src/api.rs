@@ -344,7 +344,7 @@ pub async fn chat_completion(
     messages: Vec<ChatMessage>,
     model: Option<String>,
 ) -> Result<ChatCompletionResponse> {
-    let model = model.unwrap_or_else(|| "tinyllama".to_string());
+    let model = model.unwrap_or_else(|| "lfm2.5-1.2b-instruct".to_string());
 
     let body_obj = serde_json::json!({
         "model": model,
@@ -375,11 +375,23 @@ pub async fn chat_completion(
 
     let status = resp.status();
     let text = resp.text().await.context("response body read failed")?;
+
+    if !status.is_success() {
+        // Try to extract a friendly error from the JSON error body
+        if let Ok(err_body) = serde_json::from_str::<serde_json::Value>(&text) {
+            let msg = err_body.get("error")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown error");
+            let code = err_body.get("code")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            anyhow::bail!("Hive backend error ({}): {} [{}]", status, msg, code);
+        }
+        anyhow::bail!("Hive backend error ({}): {}", status, text);
+    }
+
     let parsed: ChatCompletionResponse = serde_json::from_str(&text)
-        .with_context(|| {
-            let preview: String = text.chars().take(300).collect();
-            format!("non-JSON response (status {}): {}", status, preview)
-        })?;
+        .context("parse chat completion response")?;
     Ok(parsed)
 }
 

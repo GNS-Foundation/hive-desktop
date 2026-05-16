@@ -97,3 +97,11 @@ pub async fn chat_completion(messages: Vec<api::ChatMessage>) -> Result<api::Cha
     api::chat_completion(&id, messages, None).await.map_err(|e| format!("chat_completion: {:?}", e))
 }
 
+// === v0.4.4: open the download/update page in the user's default browser ===
+#[tauri::command]
+pub fn open_download_page(app: tauri::AppHandle) -> Result<(), String> {
+    use tauri_plugin_opener::OpenerExt;
+    app.opener()
+        .open_url("https://hive.geiant.com/download", None::<&str>)
+        .map_err(|e| e.to_string())
+}

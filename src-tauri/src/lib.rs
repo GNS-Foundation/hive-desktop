@@ -63,6 +63,7 @@ pub fn run() {
             commands::set_display_name,
             commands::issue_invitation,
             commands::chat_completion,
+            commands::open_download_page,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
