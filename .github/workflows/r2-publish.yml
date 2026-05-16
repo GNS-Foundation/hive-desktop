@@ -1,0 +1,89 @@
+name: Publish to R2
+
+on:
+    release:
+        types: [published] # fires when you click "Publish release" on the draft
+    workflow_dispatch:
+        inputs:
+            tag:
+                description: "Release tag (e.g. v0.5.0)"
+                required: true
+
+jobs:
+    publish-to-r2:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with: { node-version: "20" }
+
+            - name: Determine version
+              id: v
+              run: |
+                  TAG="${{ github.event.release.tag_name || github.event.inputs.tag }}"
+                  VERSION="${TAG#v}"
+                  echo "tag=$TAG"          >> "$GITHUB_OUTPUT"
+                  echo "version=$VERSION"  >> "$GITHUB_OUTPUT"
+                  echo "Publishing $TAG → R2 v$VERSION/"
+
+            - name: Download release assets from GitHub
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  mkdir -p ./assets
+                  gh release download "${{ steps.v.outputs.tag }}" \
+                    --repo "${{ github.repository }}" \
+                    --dir ./assets \
+                    --pattern "*.dmg" --pattern "*.exe" --pattern "*.msi" \
+                    --pattern "*.deb" --pattern "*.AppImage"
+                  echo "Downloaded:"
+                  ls -lah ./assets
+
+            - name: Upload assets to R2 under v<version>/
+              env:
+                  AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+                  AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+                  AWS_DEFAULT_REGION: auto
+                  R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+                  R2_BUCKET: ${{ secrets.R2_BUCKET }}
+                  VERSION: ${{ steps.v.outputs.version }}
+              run: |
+                  aws s3 cp ./assets/ "s3://$R2_BUCKET/v$VERSION/" \
+                    --endpoint-url "$R2_ENDPOINT" \
+                    --recursive
+
+            - name: Build and upload manifest.json
+              env:
+                  AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+                  AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+                  AWS_DEFAULT_REGION: auto
+                  R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+                  R2_BUCKET: ${{ secrets.R2_BUCKET }}
+                  VERSION: ${{ steps.v.outputs.version }}
+                  RELEASE_NOTES_SHORT: ${{ github.event.release.body || format('Release v{0}', steps.v.outputs.version) }}
+              run: |
+                  # Build manifest from the assets we just downloaded
+                  node scripts/build-manifest.mjs "$VERSION" ./assets \
+                    --release-notes "$(echo "$RELEASE_NOTES_SHORT" | head -1 | cut -c1-200)"
+
+                  cat manifest.json
+
+                  aws s3 cp manifest.json "s3://$R2_BUCKET/manifest.json" \
+                    --endpoint-url "$R2_ENDPOINT" \
+                    --content-type "application/json" \
+                    --cache-control "public, max-age=60"
+
+            - name: Summary
+              env:
+                  VERSION: ${{ steps.v.outputs.version }}
+              run: |
+                  echo "## ✅ Published v$VERSION to R2" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "- Bucket prefix: \`v$VERSION/\`" >> $GITHUB_STEP_SUMMARY
+                  echo "- Manifest URL: https://releases.geiant.com/manifest.json" >> $GITHUB_STEP_SUMMARY
+                  echo "- Files:" >> $GITHUB_STEP_SUMMARY
+                  ls -la ./assets | tail -n +2 | awk '{print "  - `" $NF "`"}' >> $GITHUB_STEP_SUMMARY
