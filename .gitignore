@@ -4,7 +4,7 @@ src-tauri/gen/
 dist/
 *.log
 .DS_Store
-.env
+.env*
 .env.local
 
 # Backup files
